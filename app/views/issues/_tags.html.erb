@@ -1,4 +1,4 @@
-<% if @project.module_enabled?(:tags) %>
+<% if @project.module_enabled?(:tags) && User.current.allowed_to?(:issue_view_tags, @project) %>
 <% unless issue.tag_list.empty? %>
   <div class="tags attribute">
     <div class="label">

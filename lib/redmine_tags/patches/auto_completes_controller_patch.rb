@@ -7,15 +7,23 @@ module RedmineTags
 
       module InstanceMethods
         def issue_tags
-          @name = params[:q].to_s
-          @tags = Issue.available_tags project: @project, name_like: @name
-          render layout: false, partial: 'tag_list'
+          if User.current.allowed_to?(:issue_edit_tags, @project) 
+            @name = params[:q].to_s
+            @tags = Issue.available_tags project: @project, name_like: @name
+            render layout: false, partial: 'tag_list'
+          else
+            render layout: false, partial: 'empty_list'
+          end
         end
 
         def wiki_tags
-          @name = params[:q].to_s
-          @tags = WikiPage.available_tags project: @project, name_like: @name
-          render layout: false, partial: 'tag_list'
+          if User.current.allowed_to?(:wiki_edit_tags, @project) 
+            @name = params[:q].to_s
+            @tags = WikiPage.available_tags project: @project, name_like: @name
+            render layout: false, partial: 'tag_list'
+          else
+            render layout: false, partial: 'empty_list'
+          end
         end
       end
     end

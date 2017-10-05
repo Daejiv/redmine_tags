@@ -18,7 +18,9 @@ Redmine::Plugin.register :redmine_tags do
   requires_redmine version_or_higher: '3.0.0'
 
   project_module :tags do
+    permission :issue_view_tags, { }
     permission :issue_edit_tags, { }
+    permission :wiki_view_tags, { }
     permission :wiki_edit_tags, { }
   end
 

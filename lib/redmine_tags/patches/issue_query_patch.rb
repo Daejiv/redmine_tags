@@ -4,6 +4,7 @@ module RedmineTags
       def self.included(base)
         base.send :include, InstanceMethods
         base.class_eval do
+          puts "Aliasing some methods"
           alias_method :statement_original, :statement
           alias_method :statement, :statement_extended
           alias_method :available_filters_original, :available_filters
@@ -39,10 +40,20 @@ module RedmineTags
 
         def available_filters_extended
           unless @available_filters
-            available_filters_original.merge!({ 'tags' => { name: l(:tags),
-              type: :list_optional, order: 6,
-              values: Issue.available_tags(project: project).collect {|t| [t.name, t.name] }
-            }})
+            puts "Settings tags filter"
+            puts "User: " + User.current.name
+            puts "Permissions: " + User.current.allowed_to?(:issue_view_tags, project).to_s
+            if User.current.allowed_to?(:issue_view_tags, project)
+              available_filters_original.merge!({ 'tags' => { name: l(:tags),
+                type: :list_optional, order: 6,
+                values: Issue.available_tags(project: project).collect {|t| [t.name, t.name] }
+              }})
+            else
+              available_filters_original.merge!({ 'tags' => { name: l(:tags),
+                type: :list_optional, order: 6,
+                values: Array.new
+              }})
+            end
           end
           @available_filters
         end

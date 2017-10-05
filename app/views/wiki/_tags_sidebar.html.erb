@@ -1,4 +1,4 @@
-<% if @project.module_enabled?(:tags) -%>
+<% if @project.module_enabled?(:tags) && User.current.allowed_to?(:wiki_view_tags, @project) -%>
 <% unless sidebar_tags.empty? %>
   <%= stylesheet_link_tag 'jquery.tagit.css', plugin: 'redmine_tags' %>
   <%= stylesheet_link_tag 'redmine_tags', plugin: 'redmine_tags' %>

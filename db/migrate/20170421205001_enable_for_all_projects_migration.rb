@@ -16,10 +16,10 @@ class EnableForAllProjectsMigration < ActiveRecord::Migration
 
         puts '********' * 10
         puts 'Redmine Tags now supports enabling tagging per project, and a permission per role'
-        puts 'to edit tags. This script can help you migrate to this new functionality.'
+        puts 'to view or edit tags. This script can help you migrate to this new functionality.'
         puts ''
         puts 'There are two possible migration scenarios:'
-        puts '1. Enable Tags for all projects, and give edit permissions to all roles.'
+        puts '1. Enable Tags for all projects, and give view and edit permissions to all roles.'
         puts '   This leaves the functionality of Redmine Tags as before the introduction of'
         puts '   permissions and per-project settings.'
         puts '2. Do not enable Tags for any project, and do not give edit permissions'
@@ -61,8 +61,14 @@ class EnableForAllProjectsMigration < ActiveRecord::Migration
 
             Role.all.each do |r|
                 enabled_permissions = r.permissions
+                if !enabled_permissions.include?(:issue_view_tags)
+                    enabled_permissions.push(:issue_view_tags)
+                end
                 if !enabled_permissions.include?(:issue_edit_tags)
                     enabled_permissions.push(:issue_edit_tags)
+                end
+                if !enabled_permissions.include?(:wiki_view_tags)
+                    enabled_permissions.push(:wiki_view_tags)
                 end
                 if !enabled_permissions.include?(:wiki_edit_tags)
                     enabled_permissions.push(:wiki_edit_tags)

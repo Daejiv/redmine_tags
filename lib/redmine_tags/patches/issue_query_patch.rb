@@ -4,25 +4,16 @@ module RedmineTags
       def self.included(base)
         base.send :include, InstanceMethods
         base.class_eval do
-          puts "Aliasing some methods"
-          alias_method :statement_original, :statement
-          alias_method :statement, :statement_extended
-          alias_method :available_filters_original, :available_filters
-          alias_method :available_filters, :available_filters_extended
-          base.add_available_column QueryColumn.new(:tags)
+          unloadable
+
+          alias_method_chain :available_filters, :tags
+          alias_method_chain :available_columns, :tags
         end
       end
 
       module InstanceMethods
-        def statement_extended
-          if filters
-            filter  = filters.delete 'tags'
-          end
-          clauses = statement_original || ''
-          if filter
-            filters.merge! 'tags' => filter
-            op = operator_for 'tags'
-            case op
+        def sql_for_tags_field(field, operator, value)
+          case operator
             when '=', '!'
               issues = Issue.tagged_with(values_for('tags'), any: true)
             when '!*'
@@ -30,32 +21,31 @@ module RedmineTags
             else
               issues = Issue.tagged_with ActsAsTaggableOn::Tag.all.map(&:to_s), any: true
             end
-            compare = op.eql?('!') ? 'NOT IN' : 'IN'
+            compare = operator.eql?('!') ? 'NOT IN' : 'IN'
             ids_list = issues.collect {|issue| issue.id }.push(0).join(',')
-            clauses << " AND " unless clauses.empty?
-            clauses << "( #{ Issue.table_name }.id #{ compare } (#{ ids_list }) ) "
-          end
-          clauses
+
+            "( #{ Issue.table_name }.id #{ compare } (#{ ids_list }) )"
         end
 
-        def available_filters_extended
-          unless @available_filters
-            puts "Settings tags filter"
-            puts "User: " + User.current.name
-            puts "Permissions: " + User.current.allowed_to?(:issue_view_tags, project).to_s
-            if User.current.allowed_to?(:issue_view_tags, project)
-              available_filters_original.merge!({ 'tags' => { name: l(:tags),
-                type: :list_optional, order: 6,
-                values: Issue.available_tags(project: project).collect {|t| [t.name, t.name] }
-              }})
-            else
-              available_filters_original.merge!({ 'tags' => { name: l(:tags),
-                type: :list_optional, order: 6,
-                values: Array.new
-              }})
-            end
+        def available_filters_with_tags
+          if @available_filters.blank?
+            add_available_filter('tags', :type => :list_optional, :name => l(:field_tags),
+              :values => Issue.available_tags(project: project).collect {|t| [t.name, t.name]}
+            ) if !available_filters_without_tags.key?('tags')
+          else
+            available_filters_without_tags
           end
           @available_filters
+        end
+
+        def available_columns_with_tags
+          if @available_columns.blank?
+            @available_columns = available_columns_without_tags
+            @available_columns << QueryColumn.new(:tags)
+          else
+            @available_columns_without_tags
+          end
+          @available_columns
         end
       end
     end

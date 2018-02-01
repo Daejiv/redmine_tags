@@ -45,7 +45,14 @@ module RedmineTags
         #   * open_only - Boolean. Whenever search within open issues only.
         #   * name_like - String. Substring to filter found tags.
         def available_tags(options = {})
-          issues_scope = Issue.visible.select('issues.id').joins(:project)
+          projects_with_view_permissions = []
+          Project.all.each {|p|
+            if User.current.allowed_to?(:issue_view_tags, p)
+              projects_with_view_permissions.push(p)
+            end
+          }
+
+          issues_scope = Issue.visible.select('issues.id').joins(:project).where(project: projects_with_view_permissions)
           issues_scope = issues_scope.on_project(options[:project]) if options[:project]
           issues_scope = issues_scope.joins(:status).open if options[:open_only]
 
